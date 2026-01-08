@@ -46,25 +46,40 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
+    - name: Create logs directory
+      run: mkdir -p logs
+    
     - name: Stop existing PM2 process
-      run: pm2 delete node-app || echo "No existing process to delete"
+      run: |
+        pm2 delete ecosystem.config.js || echo "No existing process to delete"
+        pm2 kill || echo "PM2 daemon stopped"
       continue-on-error: true
     
     - name: Deploy with PM2
       run: |
-        pm2 start src/server.js --name node-app
-        pm2 save
+        echo "Starting application with PM2..."
+        pm2 start ecosystem.config.js
+        pm2 save --force
+        echo "PM2 process started and saved"
     
     - name: Verify deployment
       run: |
-        echo "Waiting for application to start..."
-        sleep 3
-        pm2 status
         echo "=========================================="
         echo "DEPLOYMENT VERIFICATION"
         echo "=========================================="
-        curl -f http://localhost:3000 || echo "Failed to reach /"
-        curl -f http://localhost:3000/api || echo "Failed to reach /api"
+        echo "Waiting for application to start..."
+        sleep 10
+        echo ""
+        echo "PM2 Status:"
+        pm2 status
+        echo ""
+        echo "PM2 Logs (last 30 lines):"
+        pm2 logs node-app --lines 30 --nostream || echo "No logs available yet"
+        echo ""
+        echo "Testing endpoints..."
+        curl -f http://localhost:3000 || echo "✗ Failed to reach /"
+        curl -f http://localhost:3000/api || echo "✗ Failed to reach /api"
+        echo ""
         echo "=========================================="
     
     - name: Display deployment info
