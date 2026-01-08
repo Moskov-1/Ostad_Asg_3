@@ -18,12 +18,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Download test results artifact
+    - name: Download test results artifact (optional)
       uses: actions/download-artifact@v4
       with:
         name: test-results
         path: ./downloaded-test-results
+        run-id: ${{ github.event.workflow_run.id }}
       continue-on-error: true
+      if: github.event_name == 'workflow_run'
     
     - name: Display test results
       run: |
